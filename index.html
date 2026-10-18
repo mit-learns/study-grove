@@ -921,5 +921,8 @@ reindex();renderAll();preview();setStatus();
 })();
 })();
 </script>
+<script>
+	navigator.serviceWorker?.register('./sw.js')
+</script>
 </body>
 </html>
