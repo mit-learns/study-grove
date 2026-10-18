@@ -1,0 +1,17 @@
+{
+  "name": "Study Grove",
+  "short_name": "StudyGrove",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0d0b",
+  "theme_color": "#0a0d0b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://placehold.co/512x512/0a0d0b/4ee07a.png?text=SG",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
