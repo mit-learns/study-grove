@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d0b">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Study Grove</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+:root{
+  --bg:#0a0d0b; --panel:#0f1512; --panel-hi:#141d18; --fg:#c9d8c9; --dim:#6f8472; --line:#1f2e24;
+  --green:#4ee07a; --amber:#f2b84b; --red:#ff6b5e; --cyan:#5cc8e0; --on-green:#04140a;
+  --mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 84px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]:not([hidden=until-found i]){display:none!important}
+body{
+  margin:0;
+  background:var(--bg); color:var(--fg);
+  font:14px/1.55 var(--mono);
+  padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+::selection{background:var(--green);color:var(--on-green)}
+main{max-width:640px;margin:0 auto}
+h1,h2,p{margin:0}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* Header & Top Bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(10,13,11,.92);backdrop-filter:blur(6px);padding:12px 0 10px;border-bottom:1px solid var(--line)}
+.ps1{overflow-wrap:anywhere;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ps1 .u{color:var(--green);font-weight:700}
+.ps1 .p{color:var(--cyan);font-weight:700}
+#title{color:var(--fg);font-weight:600}
+.cur{display:inline-block;width:.6em;height:1.05em;background:var(--green);vertical-align:text-bottom;margin-left:3px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.barline{margin-top:6px;display:flex;gap:10px;align-items:baseline;white-space:nowrap}
+.tbar .on{color:var(--green)} .tbar .off{color:var(--line)}
+#tbar{color:var(--dim)}
+#pct{color:var(--amber);font-weight:700}
+
+/* Summary Window */
+.win{margin-top:16px;border:1px solid var(--line);background:var(--panel)}
+.win-title{padding:5px 12px;border-bottom:1px solid var(--line);color:var(--dim);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.sum{padding:10px 12px 12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 12px;font-size:13px}
+.kv b{color:var(--amber);font-weight:600}
+
+/* Next Up & Focus Timer */
+.next{margin-top:12px;padding:12px;border:1px solid var(--line);background:var(--panel);display:grid;gap:6px}
+.cmd{color:var(--dim);font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.cmd span::before{content:"$ ";color:var(--green)}
+.nu-path{font-size:12px;color:var(--dim);overflow-wrap:anywhere}
+.nu-name{font-size:15px;font-weight:600;color:var(--fg);overflow-wrap:anywhere}
+.tag{color:var(--dim);font-weight:400;font-size:12px}
+.next-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.timer-box{display:inline-flex;align-items:center;gap:6px;margin-left:auto;border:1px solid var(--line);padding:3px 8px;border-radius:2px;background:var(--bg);font-size:12px}
+.timer-disp{color:var(--cyan);font-weight:700;min-width:44px;text-align:center}
+.timer-disp.running{color:var(--amber)}
+.t-btn{border:0;background:none;color:var(--dim);padding:2px 5px;font-size:12px;font-weight:600}
+.t-btn:hover,.t-btn:focus-visible{color:var(--fg)}
+
+/* Buttons & Tools */
+.btn{min-height:42px;padding:0 14px;border:1px solid var(--dim);background:transparent;font-weight:600;font-size:13px;border-radius:2px;color:var(--fg);transition:background .1s,border-color .1s}
+.btn:hover{border-color:var(--fg)}
+.btn:active{background:var(--line)}
+.btn.primary{background:var(--green);color:var(--on-green);border-color:var(--green)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{min-height:36px;padding:0 10px;font-size:12px}
+.btn.quiet{border-color:var(--line);color:var(--dim)}
+.btn.quiet:hover{border-color:var(--dim);color:var(--fg)}
+.tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tools .btn{flex:1 1 140px}
+.tools .btn[aria-pressed="true"]{border-color:var(--amber);color:var(--amber);background:rgba(242,184,75,.07)}
+
+/* Filter / Search Bar */
+.filter-bar{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);padding:8px}
+.search-wrap{flex:1 1 180px;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);padding:0 10px;min-height:36px}
+.search-wrap:focus-within{border-color:var(--green)}
+.search-wrap span{color:var(--green);font-size:12px;user-select:none}
+.search-input{border:0;background:transparent;width:100%;font-size:13px;outline:none;color:var(--fg)}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{min-height:36px;padding:0 9px;border:1px solid var(--line);background:var(--bg);color:var(--dim);font-size:12px;border-radius:2px}
+.pill[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);font-weight:600}
+
+/* Paste / Text Editor Panel */
+.panel{margin-top:12px;padding:14px;border:1px solid var(--line);background:var(--panel);display:grid;gap:12px}
+#paste{scroll-margin-top:96px}
+.panel h2{font-size:14px;font-weight:700;color:var(--green)}
+.panel h2::before{content:"$ ";color:var(--dim)}
+.panel label{font-size:12px;color:var(--dim);display:block;margin-bottom:4px}
+.hint{font-size:12px;color:var(--dim);line-height:1.5}
+.field,.nm{width:100%;min-width:0;min-height:42px;padding:8px 12px;border:1px solid var(--line);border-radius:2px;background:var(--bg);font-size:15px;caret-color:var(--green)}
+.field:focus,.nm:focus{border-color:var(--green);outline:none}
+textarea.field{min-height:260px;font-size:13px;line-height:1.55;resize:vertical;tab-size:2}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1 1 120px}
+.preview{font-size:12px;color:var(--cyan)}
+
+.note{margin-top:12px;padding:12px;border:1px dashed var(--dim);display:grid;gap:10px;font-size:13px;color:var(--dim)}
+.note .row .btn{flex:0 1 auto}
+
+/* Syllabus Units, Chapters & Topics */
+.unit{margin-top:12px;border:1px solid var(--line);background:var(--panel)}
+.unit.complete{border-color:rgba(78,224,122,.35)}
+.fold{display:flex;align-items:baseline;gap:10px;width:100%;min-height:46px;padding:10px 12px;background:none;border:0;text-align:left}
+.fold:hover{background:var(--panel-hi)}
+.unit-head{font-weight:700;color:var(--cyan)}
+.unit-name,.ch-name{flex:1;min-width:0;overflow-wrap:anywhere}
+.cnt{font-size:12px;color:var(--dim);white-space:nowrap}
+.chev::before{content:"[+]";color:var(--dim);font-weight:400}
+[aria-expanded="true"] > .chev::before{content:"[-]";color:var(--amber)}
+.ubar{padding:0 12px 8px;font-size:12px;letter-spacing:.02em;line-height:1}
+.chapter{border-top:1px solid var(--line)}
+.ch-head{font-weight:600;color:var(--fg)}
+.complete > .fold .cnt,.complete > .cnt{color:var(--green)}
+.topics{padding:0 12px 8px 28px}
+.leafrow{padding:0 12px}
+.topic{display:flex;align-items:flex-start;gap:10px;min-height:42px;padding:7px 4px;cursor:pointer;position:relative;border-radius:2px}
+.topic:hover{background:var(--panel-hi)}
+.topic input{position:absolute;opacity:0;width:24px;height:24px;margin:0}
+.box{flex:none;color:var(--dim);font-weight:600;user-select:none}
+.box::before{content:"[ ]"}
+.topic input:checked + .box{color:var(--green)}
+.topic input:checked + .box::before{content:"[x]"}
+.topic input:focus-visible + .box{outline:2px solid var(--amber);outline-offset:2px}
+.tname{min-width:0;overflow-wrap:anywhere;flex:1}
+.topic.done .tname{color:var(--dim);text-decoration:line-through;text-decoration-thickness:1px}
+ mark{background:rgba(242,184,75,.25);color:var(--amber);padding:0 2px;border-radius:2px}
+.empty{font-size:12px;color:var(--dim);padding:6px 0}
+
+/* Edit Mode Controls */
+.row-edit{display:flex;gap:6px;align-items:center;padding:5px 0}
+.ch-edit{padding:8px 12px}
+.unit > .row-edit{padding:10px 12px 4px}
+.x,.mv{flex:none;min-width:38px;min-height:42px;border:1px solid var(--line);border-radius:2px;background:transparent;font-size:12px;color:var(--dim);padding:0 8px}
+.x:hover,.mv:hover{border-color:var(--dim);color:var(--fg)}
+.x.armed{color:var(--red);border-color:var(--red);font-weight:700}
+.add{min-height:40px;padding:0 12px;border:1px dashed var(--dim);border-radius:2px;background:none;color:var(--dim);font-weight:600;font-size:12px;margin:6px 12px 10px 0}
+.add:hover{border-color:var(--green);color:var(--green)}
+.unit-body > .add{margin-left:12px}
+.add-unit{width:100%;margin:12px 0 0}
+.empty-state{margin-top:12px;padding:20px 14px;border:1px dashed var(--line);color:var(--dim);font-size:13px}
+
+/* Footer & Toast */
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:grid;gap:12px}
+.status{font-size:12px;color:var(--dim)}
+.status::before{content:"# "}
+footer .row .btn{flex:0 1 auto}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));width:max-content;max-width:min(92vw,460px);padding:9px 14px;border:1px solid var(--green);background:var(--panel);color:var(--green);font-weight:600;font-size:13px;z-index:20;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+#toast-msg::before{content:"> ";color:var(--dim)}
+.undo-btn{border:1px solid var(--amber);background:transparent;color:var(--amber);font-size:12px;padding:2px 8px;border-radius:2px;font-weight:700}
+.undo-btn:hover{background:var(--amber);color:var(--on-green)}
+@media (prefers-reduced-motion: reduce){.cur{animation:none}}
+</style>
+</head>
+<body>
+
+<main>
+  <header class="top">
+    <div class="ps1">
+      <span><span class="u">grove@study</span>:<span class="p">~</span>$ <span id="title">my syllabus</span><span class="cur" aria-hidden="true"></span></span>
+    </div>
+    <div class="barline">
+      <span id="tbar" class="tbar" role="progressbar" aria-label="Syllabus progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">[]</span>
+      <span><span id="pct">0</span>%</span>
+    </div>
+  </header>
+
+  <section class="win" aria-label="Progress summary">
+    <div class="win-title"><span>progress</span><span id="wintag">0%</span></div>
+    <div class="sum">
+      <p class="kv">topics&nbsp;&nbsp;&nbsp;: <b id="c-topics">0/0</b></p>
+      <p class="kv">chapters : <b id="c-chapters">0/0</b></p>
+      <p class="kv">units&nbsp;&nbsp;&nbsp;&nbsp;: <b id="c-units">0/0</b></p>
+      <p class="kv">remaining: <b id="c-rem">0</b></p>
+    </div>
+  </section>
+
+  <section class="next" id="next" hidden>
+    <div class="cmd">
+      <span id="next-cmd">next</span>
+      <div class="timer-box" title="Study Focus Timer">
+        <button class="t-btn" type="button" data-act="timer-mode" id="t-mode" aria-label="Switch timer duration">25m</button>
+        <span class="timer-disp" id="t-disp">25:00</span>
+        <button class="t-btn" type="button" data-act="timer-toggle" id="t-tog">start</button>
+        <button class="t-btn" type="button" data-act="timer-reset" aria-label="Reset timer">↺</button>
+      </div>
+    </div>
+    <div id="next-body"></div>
+  </section>
+
+  <div class="tools">
+    <button class="btn primary" id="btn-paste" type="button" aria-expanded="false">paste / text edit</button>
+    <button class="btn" id="btn-edit" type="button" aria-pressed="false">edit structure</button>
+  </div>
+
+  <section class="panel" id="paste" hidden>
+    <h2>syllabus text</h2>
+    <p class="hint">Edit your syllabus as plain text. Ticked items show as <code>[x]</code>. Prefix lines with <code>Unit:</code> or <code>Chapter:</code>, or indent by 2 spaces for chapters and 4 spaces for topics. Press <code>Tab</code> / <code>Shift+Tab</code> to indent.</p>
+    <div>
+      <label for="pasteName">syllabus name</label>
+      <input class="field" id="pasteName" type="text" placeholder="Microbiology, Semester 4" autocomplete="off">
+    </div>
+    <div>
+      <label for="pasteText">syllabus text</label>
+      <textarea class="field" id="pasteText" spellcheck="false" placeholder="Unit 1: Electrostatics
+  Chapter: Electric Charges and Fields
+    Coulomb's law
+    Electric field lines
+    Gauss's law"></textarea>
+    </div>
+    <div class="row" id="pasteTools">
+      <button class="btn small" type="button" data-act="outdent">← outdent</button>
+      <button class="btn small" type="button" data-act="indent">indent →</button>
+      <button class="btn small quiet" type="button" id="btn-reload">discard changes</button>
+    </div>
+    <p class="preview" id="preview">nothing to import yet.</p>
+    <div class="row">
+      <button class="btn primary" type="button" id="btn-replace">save syllabus</button>
+      <button class="btn quiet" type="button" id="btn-close">close</button>
+    </div>
+  </section>
+
+  <div class="filter-bar" id="filter-bar">
+    <label class="search-wrap" aria-label="Filter syllabus">
+      <span>grep:</span>
+      <input class="search-input" id="q-input" type="search" placeholder="filter topics..." autocomplete="off">
+    </label>
+    <div class="pills" role="group" aria-label="Filter by completion">
+      <button class="pill" type="button" data-filter="all" aria-pressed="true">all</button>
+      <button class="pill" type="button" data-filter="todo" aria-pressed="false">todo</button>
+      <button class="pill" type="button" data-filter="done" aria-pressed="false">done</button>
+      <button class="pill" type="button" data-act="fold-all" title="Expand or collapse all units">± fold</button>
+    </div>
+  </div>
+
+  <div id="banner"></div>
+  <div id="list"></div>
+
+  <footer>
+    <p class="status" id="status">loading progress</p>
+    <div class="row">
+      <button class="btn small quiet" type="button" id="btn-md">copy markdown</button>
+      <button class="btn small quiet" type="button" id="btn-json">export json</button>
+      <button class="btn small quiet" type="button" id="btn-reset">reset progress</button>
+      <button class="btn small quiet" type="button" id="btn-clear">start over</button>
+    </div>
+  </footer>
+</main>
+
+<div id="toast" role="status" aria-live="polite" hidden>
+  <span id="toast-msg"></span>
+  <button class="undo-btn" id="toast-undo" type="button" hidden>undo</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+var KEY='study-grove-v1';
+function $(s){return document.querySelector(s)}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+var reduced=false;
+try{reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+
+/* ---------- Data & State ---------- */
+function T(n,d){return {id:uid(),name:n,done:!!d}}
+function C(n,t,d,o){return {id:uid(),name:n,open:o!==false,done:!!d,topics:t}}
+function U(n,o,c){return {id:uid(),name:n,open:o,chapters:c}}
+
+function sample(){
+  return {title:'Physics, Class 12',example:true,savedAt:0,units:[
+    U('Unit 1: Electrostatics',true,[
+      C('Electric Charges and Fields',[T("Coulomb's law",1),T('Electric field and field lines',1),T('Electric flux',1),T("Gauss's law and its uses",1)]),
+      C('Potential and Capacitance',[T('Electric potential',1),T('Equipotential surfaces',1),T('Capacitors in series and parallel'),T('Energy stored in a capacitor')])
+    ]),
+    U('Unit 2: Current Electricity',false,[
+      C('Current and Resistance',[T('Drift velocity'),T("Ohm's law and resistivity"),T('Combination of resistors')]),
+      C('Circuits',[T("Kirchhoff's rules"),T('Wheatstone bridge'),T('Potentiometer')])
+    ]),
+    U('Unit 3: Magnetism',false,[
+      C('Moving Charges',[T('Lorentz force'),T('Biot-Savart law'),T("Ampere's circuital law"),T('Torque on a current loop')]),
+      C('Magnetism and Matter',[T('Bar magnet as a dipole'),T("Earth's magnetism"),T('Para, dia and ferromagnetism')])
+    ]),
+    U('Unit 4: Optics',false,[
+      C('Ray Optics',[T('Reflection and refraction'),T('Total internal reflection'),T('Lenses and the lens maker formula'),T('Optical instruments')]),
+      C('Wave Optics',[T("Huygens' principle"),T("Young's double slit experiment"),T('Diffraction and polarisation')]),
+      C('Revision and mock test',[])
+    ])
+  ]};
+}
+
+function normalize(s){
+  if(!s||!Array.isArray(s.units))return null;
+  var out={title:typeof s.title==='string'?s.title:'My syllabus',example:!!s.example,savedAt:+s.savedAt||0,units:[]};
+  s.units.forEach(function(u){
+    var nu={id:u.id||uid(),name:String(u.name||'Untitled'),open:u.open!==false,chapters:[]};
+    (u.chapters||[]).forEach(function(c){
+      var nc={id:c.id||uid(),name:String(c.name||'Untitled'),open:c.open!==false,done:!!c.done,topics:[]};
+      (c.topics||[]).forEach(function(t){nc.topics.push({id:t.id||uid(),name:String(t.name||''),done:!!t.done})});
+      nu.chapters.push(nc);
+    });
+    out.units.push(nu);
+  });
+  return out;
+}
+
+var S=null, map={}, editing=false, armed=null, armTimer=0, touched=false, pasteDirty=false;
+var query='', filterMode='all', undoSnap=null;
+
+try{var raw=localStorage.getItem(KEY);if(raw)S=normalize(JSON.parse(raw))}catch(e){}
+if(!S)S=sample();
+
+function snapshot(){
+  undoSnap=JSON.stringify(S);
+}
+
+function reindex(){
+  map={};
+  S.units.forEach(function(u){
+    map[u.id]={o:u,arr:S.units,type:'u'};
+    u.chapters.forEach(function(c){
+      map[c.id]={o:c,arr:u.chapters,u:u,type:'c'};
+      c.topics.forEach(function(t){map[t.id]={o:t,arr:c.topics,c:c,u:u,type:'t'}});
+    });
+  });
+}
+
+function ccount(c){
+  if(!c.topics.length)return {t:1,d:c.done?1:0,leaf:true};
+  return {t:c.topics.length,d:c.topics.filter(function(t){return t.done}).length,leaf:false};
+}
+
+function stats(){
+  var r={tot:0,done:0,uTot:S.units.length,uDone:0,cTot:0,cDone:0};
+  S.units.forEach(function(u){
+    var ut=0,ud=0;
+    u.chapters.forEach(function(c){
+      var k=ccount(c);ut+=k.t;ud+=k.d;r.cTot++;if(k.d===k.t)r.cDone++;
+    });
+    r.tot+=ut;r.done+=ud;
+    if(ut>0&&ud===ut)r.uDone++;
+  });
+  r.p=r.tot?r.done/r.tot:0;
+  return r;
+}
+
+function tbar(p,n){
+  var f=Math.round(clamp(p,0,1)*n);
+  return '<span class="on">'+new Array(f+1).join('█')+'</span><span class="off">'+new Array(n-f+1).join('░')+'</span>';
+}
+
+function highlight(str){
+  var safe=esc(str);
+  if(!query)return safe;
+  var qEsc=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return safe.replace(new RegExp('('+qEsc+')','ig'),'<mark>$1</mark>');
+}
+
+/* ---------- Render ---------- */
+function renderTop(st){
+  $('#title').textContent=(S.title||'my syllabus').toLowerCase();
+  var pc=Math.round(st.p*100);
+  $('#pct').textContent=pc;$('#wintag').textContent=pc+'%';
+  var tb=$('#tbar');tb.innerHTML='['+tbar(st.p,22)+']';tb.setAttribute('aria-valuenow',pc);
+  $('#c-topics').textContent=st.done+'/'+st.tot;
+  $('#c-chapters').textContent=st.cDone+'/'+st.cTot;
+  $('#c-units').textContent=st.uDone+'/'+st.uTot;
+  $('#c-rem').textContent=(st.tot-st.done)+' left';
+}
+
+function nextItem(){
+  for(var i=0;i<S.units.length;i++){var u=S.units[i];
+    for(var j=0;j<u.chapters.length;j++){var c=u.chapters[j];
+      if(!c.topics.length){if(!c.done&&c.name)return {id:c.id,name:c.name,u:u,c:null}}
+      else for(var k=0;k<c.topics.length;k++)if(!c.topics[k].done&&c.topics[k].name)return {id:c.topics[k].id,name:c.topics[k].name,u:u,c:c};
+    }}
+  return null;
+}
+
+function renderNext(st){
+  var el=$('#next'), body=$('#next-body'), cmd=$('#next-cmd');
+  if(!st.tot||editing){el.hidden=true;return}
+  var n=nextItem();el.hidden=false;
+  if(!n){
+    cmd.textContent='status';
+    body.innerHTML='<p class="nu-name" style="color:var(--green)">all topics complete.</p>';
+    return;
+  }
+  cmd.textContent='next';
+  var path=n.c?esc(n.u.name)+' / '+esc(n.c.name):esc(n.u.name);
+  body.innerHTML='<p class="nu-path">'+path+'</p><p class="nu-name">'+esc(n.name)+(n.c?'':' <span class="tag">chapter, no topics</span>')+'</p><div class="next-actions"><button class="btn small primary" type="button" data-act="next-done" data-t="'+n.id+'">mark done</button><button class="btn small quiet" type="button" data-act="jump" data-t="'+n.id+'">locate</button></div>';
+}
+
+function renderBanner(){
+  $('#banner').innerHTML=S.example?'<div class="note"><p># example syllabus loaded. tick a few items to test progress, or replace with your own.</p><div class="row"><button class="btn small primary" type="button" data-act="open-paste">use my syllabus</button><button class="btn small" type="button" data-act="clear-example">remove example</button></div></div>':'';
+}
+
+function delBtn(id,what){
+  return armed===id?'<button class="x armed" type="button" data-act="del" data-id="'+id+'" aria-label="Confirm delete '+what+'">confirm</button>'
+    :'<button class="x" type="button" data-act="del" data-id="'+id+'" aria-label="Delete '+what+'">rm</button>';
+}
+
+function matchFilter(done,name){
+  if(filterMode==='todo'&&done)return false;
+  if(filterMode==='done'&&!done)return false;
+  if(query&&name.toLowerCase().indexOf(query)<0)return false;
+  return true;
+}
+
+function topicHTML(t){
+  if(editing)return '<div class="row-edit"><input class="nm" data-k="t" data-id="'+t.id+'" value="'+esc(t.name)+'" placeholder="topic name (Enter to add next)" aria-label="Topic name" autocomplete="off">'+delBtn(t.id,'topic')+'</div>';
+  return '<label class="topic'+(t.done?' done':'')+'"><input type="checkbox" data-t="'+t.id+'"'+(t.done?' checked':'')+'><span class="box" aria-hidden="true"></span><span class="tname">'+highlight(t.name)+'</span></label>';
+}
+
+function chapterHTML(c,uMatch){
+  var k=ccount(c),body='';
+  var cMatch=query&&c.name.toLowerCase().indexOf(query)>=0;
+  if(k.leaf&&!editing){
+    if(!matchFilter(c.done,c.name)&&!uMatch)return '';
+    return '<div class="chapter'+(c.done?' complete':'')+'"><div class="leafrow"><label class="topic'+(c.done?' done':'')+'"><input type="checkbox" data-t="'+c.id+'"'+(c.done?' checked':'')+'><span class="box" aria-hidden="true"></span><span class="tname">'+highlight(c.name)+' <span class="tag">chapter, no topics</span></span></label></div></div>';
+  }
+  var visTopics=editing?c.topics:c.topics.filter(function(t){
+    if(filterMode==='todo'&&t.done)return false;
+    if(filterMode==='done'&&!t.done)return false;
+    if(query&&!uMatch&&!cMatch&&t.name.toLowerCase().indexOf(query)<0)return false;
+    return true;
+  });
+  if(!editing&&(query||filterMode!=='all')&&!visTopics.length&&!cMatch)return '';
+
+  var isOpen=editing||c.open||!!query||filterMode!=='all';
+  var head=editing
+    ?'<div class="row-edit ch-edit"><input class="nm" data-k="c" data-id="'+c.id+'" value="'+esc(c.name)+'" placeholder="chapter name" aria-label="Chapter name" autocomplete="off">'+delBtn(c.id,'chapter')+'</div>'
+    :'<button class="fold ch-head" type="button" data-act="fold" data-id="'+c.id+'" aria-expanded="'+(isOpen?'true':'false')+'"><span class="chev"></span><span class="ch-name">'+highlight(c.name)+'</span><span class="cnt">'+k.d+'/'+k.t+'</span></button>';
+  if(isOpen){
+    body=visTopics.map(topicHTML).join('');
+    if(editing&&k.leaf)body+='<p class="empty"># no topics yet: this chapter counts as one item to tick.</p>';
+    if(editing)body+='<button class="add" type="button" data-act="add-t" data-id="'+c.id+'">+ topic</button>';
+  }
+  return '<div class="chapter'+(k.d===k.t?' complete':'')+'">'+head+'<div class="topics">'+body+'</div></div>';
+}
+
+function unitHTML(u){
+  var ut=0,ud=0;
+  u.chapters.forEach(function(c){var k=ccount(c);ut+=k.t;ud+=k.d});
+  var uMatch=query&&u.name.toLowerCase().indexOf(query)>=0;
+  var chHTML=u.chapters.map(function(c){return chapterHTML(c,uMatch)}).join('');
+  if(!editing&&(query||filterMode!=='all')&&!chHTML&&!uMatch)return '';
+
+  var open=editing||u.open||!!query||filterMode!=='all',body='';
+  var head=editing
+    ?'<div class="row-edit"><input class="nm" data-k="u" data-id="'+u.id+'" value="'+esc(u.name)+'" placeholder="unit name" aria-label="Unit name" autocomplete="off"><button class="mv" type="button" data-act="mv-u" data-dir="-1" data-id="'+u.id+'" title="Move unit up">↑</button><button class="mv" type="button" data-act="mv-u" data-dir="1" data-id="'+u.id+'" title="Move unit down">↓</button>'+delBtn(u.id,'unit')+'</div>'
+    :'<button class="fold unit-head" type="button" data-act="fold" data-id="'+u.id+'" aria-expanded="'+(open?'true':'false')+'"><span class="chev"></span><span class="unit-name">'+highlight(u.name)+'</span><span class="cnt">'+ud+'/'+ut+'</span></button>';
+  if(open){
+    body='<div class="unit-body">'+chHTML;
+    if(!u.chapters.length&&!editing)body+='<p class="empty" style="padding:0 12px 12px"># no chapters yet.</p>';
+    if(editing)body+='<button class="add" type="button" data-act="add-c" data-id="'+u.id+'">+ chapter</button>';
+    body+='</div>';
+  }
+  return '<section class="unit'+(ut&&ud===ut?' complete':'')+'">'+head+(editing?'':'<div class="ubar tbar" aria-hidden="true">'+tbar(ut?ud/ut:0,20)+'</div>')+body+'</section>';
+}
+
+function renderList(){
+  reindex();
+  $('#filter-bar').hidden=editing||!S.units.length;
+  var h='';
+  if(editing)h+='<div class="panel"><div><label for="editTitle">syllabus name</label><input class="field" id="editTitle" data-k="title" value="'+esc(S.title)+'" placeholder="my syllabus" autocomplete="off"></div></div>';
+  if(!S.units.length&&!editing)h+='<div class="empty-state"><p># no units yet. tap "paste / text edit" to import a syllabus, or "edit structure" to build one.</p></div>';
+  var unitsOut=S.units.map(unitHTML).join('');
+  if(S.units.length&&!unitsOut&&!editing)unitsOut='<div class="empty-state"><p># no matching items for current filter.</p></div>';
+  h+=unitsOut;
+  if(editing)h+='<button class="add add-unit" type="button" data-act="add-u">+ unit</button>';
+  $('#list').innerHTML=h;
+}
+
+function renderAll(){
+  var st=stats();renderTop(st);renderNext(st);renderBanner();renderList();
+}
+
+/* ---------- Persistence ---------- */
+var mode='local',dbDoc=null,saveTimer=0,writing=Promise.resolve();
+function setStatus(){
+  $('#status').textContent=mode==='cloud'?'progress saved to your account and this device.':mode==='saving'?'saving...':'progress saved locally on this device.';
+}
+function save(){
+  touched=true;S.savedAt=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  if(dbDoc){mode='saving';setStatus()}
+  clearTimeout(saveTimer);saveTimer=setTimeout(pushDb,600);
+}
+function pushDb(){
+  if(!dbDoc){setStatus();return}
+  var body={state:JSON.parse(JSON.stringify(S))};
+  writing=writing.then(function(){return dbDoc.set(body)}).then(function(){mode='cloud';setStatus()},function(){mode='local';setStatus()});
+}
+function touch(){if(S.example){S.example=false;renderBanner()}}
+
+/* ---------- Toast & Undo ---------- */
+var toastT=0;
+function toast(m,allowUndo){
+  var el=$('#toast'),msg=$('#toast-msg'),ub=$('#toast-undo');
+  msg.textContent=m;
+  ub.hidden=!allowUndo||!undoSnap;
+  el.hidden=false;
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){el.hidden=true},4000);
+}
+$('#toast-undo').addEventListener('click',function(){
+  if(!undoSnap)return;
+  var restored=normalize(JSON.parse(undoSnap));
+  if(restored){
+    S=restored;undoSnap=null;pasteDirty=false;
+    save();renderAll();
+    toast('action undone.');
+  }
+});
+
+function disarm(){armed=null;clearTimeout(armTimer)}
+function arm(id){armed=id;clearTimeout(armTimer);armTimer=setTimeout(function(){armed=null;renderList()},4000)}
+
+/* ---------- Actions ---------- */
+function setDone(id,val){
+  var m=map[id];if(!m)return;
+  snapshot();
+  var ae=document.activeElement,hadFocus=!!(ae&&ae.type==='checkbox'&&ae.dataset.t===id);
+  m.o.done=val;touch();save();
+  var st=stats();renderTop(st);renderNext(st);renderList();
+  if(hadFocus){var cb=$('input[data-t="'+id+'"]');if(cb)cb.focus({preventScroll:true})}
+  if(val){
+    var chap=m.c||m.o,ck=ccount(chap),cd=ck.d===ck.t;
+    var ud=m.u.chapters.every(function(c){var k=ccount(c);return k.d===k.t});
+    if(st.tot&&st.done===st.tot)toast('syllabus complete!',true);
+    else if(ud)toast('unit complete: '+m.u.name,true);
+    else if(cd&&m.c)toast('chapter done: '+m.c.name,true);
+    else toast(m.c?'topic done':'chapter done: '+m.o.name,true);
+  }
+}
+
+function focusInput(id){
+  var el=$('input[data-id="'+id+'"]');
+  if(el){el.focus();try{el.scrollIntoView({block:'nearest'})}catch(e){}}
+}
+
+function cleanupEdit(){
+  S.units.forEach(function(u){
+    if(!u.name.trim())u.name='Untitled unit';
+    u.chapters.forEach(function(c){
+      if(!c.name.trim())c.name='Untitled chapter';
+      c.topics=c.topics.filter(function(t){return t.name.trim()});
+    });
+  });
+}
+
+function setEditing(v){
+  editing=v;disarm();
+  if(!v)cleanupEdit();
+  var b=$('#btn-edit');b.setAttribute('aria-pressed',v?'true':'false');b.textContent=v?'done editing':'edit structure';
+  if(v)closePaste();
+  pasteDirty=false;
+  save();renderAll();
+}
+
+/* ---------- Focus Timer ---------- */
+var tModes=[25,50,5],tIdx=0,tSec=25*60,tInt=0;
+function fmtTime(s){
+  var m=Math.floor(s/60),r=s%60;
+  return (m<10?'0':'')+m+':'+(r<10?'0':'')+r;
+}
+function beep(){
+  try{
+    var ctx=new (window.AudioContext||window.webkitAudioContext)();
+    var osc=ctx.createOscillator(),g=ctx.createGain();
+    osc.type='sine';osc.frequency.setValueAtTime(660,ctx.currentTime);
+    g.gain.setValueAtTime(0.12,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
+    osc.connect(g);g.connect(ctx.destination);
+    osc.start();osc.stop(ctx.currentTime+0.7);
+  }catch(e){}
+}
+function updateTimerUI(){
+  var d=$('#t-disp'),b=$('#t-tog'),m=$('#t-mode');
+  if(!d)return;
+  d.textContent=fmtTime(tSec);
+  d.classList.toggle('running',!!tInt);
+  b.textContent=tInt?'pause':'start';
+  m.textContent=tModes[tIdx]+'m';
+}
+function toggleTimer(){
+  if(tInt){clearInterval(tInt);tInt=0;updateTimerUI();return}
+  tInt=setInterval(function(){
+    if(tSec>0){tSec--;updateTimerUI()}
+    else{
+      clearInterval(tInt);tInt=0;
+      beep();toast('focus block complete ('+tModes[tIdx]+'m)!');
+      tSec=tModes[tIdx]*60;updateTimerUI();
+    }
+  },1000);
+  updateTimerUI();
+}
+
+document.addEventListener('click',function(e){
+  var fb=e.target.closest('[data-filter]');
+  if(fb){
+    filterMode=fb.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(function(p){p.setAttribute('aria-pressed',p===fb?'true':'false')});
+    renderList();
+    return;
+  }
+  var b=e.target.closest('[data-act]');if(!b)return;
+  var a=b.dataset.act,id=b.dataset.id;
+  if(a==='fold'){map[id].o.open=!map[id].o.open;save();renderList()}
+  else if(a==='fold-all'){
+    var anyOpen=S.units.some(function(u){return u.open});
+    S.units.forEach(function(u){u.open=!anyOpen;u.chapters.forEach(function(c){c.open=!anyOpen})});
+    save();renderList();
+  }
+  else if(a==='next-done'){setDone(b.dataset.t,true)}
+  else if(a==='jump'){
+    var m=map[b.dataset.t];
+    if(m){
+      m.u.open=true;if(m.c)m.c.open=true;
+      renderList();
+      var target=$('input[data-t="'+b.dataset.t+'"]');
+      if(target){target.focus();try{target.scrollIntoView({block:'center',behavior:reduced?'auto':'smooth'})}catch(err){}}
+    }
+  }
+  else if(a==='timer-toggle'){toggleTimer()}
+  else if(a==='timer-reset'){clearInterval(tInt);tInt=0;tSec=tModes[tIdx]*60;updateTimerUI()}
+  else if(a==='timer-mode'){clearInterval(tInt);tInt=0;tIdx=(tIdx+1)%tModes.length;tSec=tModes[tIdx]*60;updateTimerUI()}
+  else if(a==='add-u'){var nu=U('',true,[]);S.units.push(nu);touch();save();renderList();focusInput(nu.id)}
+  else if(a==='add-c'){var nc=C('',[]);map[id].o.chapters.push(nc);touch();save();renderList();focusInput(nc.id)}
+  else if(a==='add-t'){var nt=T('');map[id].o.topics.push(nt);map[id].o.done=false;touch();save();renderList();focusInput(nt.id)}
+  else if(a==='mv-u'){
+    var uIdx=S.units.indexOf(map[id].o),to=uIdx+(+b.dataset.dir);
+    if(to>=0&&to<S.units.length){
+      var item=S.units.splice(uIdx,1)[0];
+      S.units.splice(to,0,item);
+      touch();save();renderList();
+    }
+  }
+  else if(a==='del'){
+    if(armed===id){
+      snapshot();
+      var m=map[id];m.arr.splice(m.arr.indexOf(m.o),1);
+      disarm();touch();save();renderList();renderTop(stats());
+      toast('deleted '+m.type+'.',true);
+    }else{arm(id);renderList()}
+  }
+  else if(a==='open-paste'){openPaste()}
+  else if(a==='clear-example'){snapshot();S.units=[];S.example=false;S.title='My syllabus';pasteDirty=false;save();renderAll();toast('example cleared.',true)}
+  else if(a==='indent'||a==='outdent'){shiftLine(a==='indent'?1:-1)}
+});
+
+$('#list').addEventListener('change',function(e){
+  var el=e.target;if(el.type==='checkbox'&&el.dataset.t)setDone(el.dataset.t,el.checked);
+});
+
+/* Keyboard UX in Edit Mode */
+$('#list').addEventListener('keydown',function(e){
+  var el=e.target;
+  if(!editing||!el.dataset||!el.dataset.k)return;
+  var k=el.dataset.k,id=el.dataset.id,m=map[id];
+  if(e.key==='Enter'&&m){
+    e.preventDefault();
+    var idx=m.arr.indexOf(m.o);
+    if(k==='t'){
+      var nt=T('');m.arr.splice(idx+1,0,nt);
+      touch();save();renderList();focusInput(nt.id);
+    }else if(k==='c'){
+      var nc=C('',[]);m.arr.splice(idx+1,0,nc);
+      touch();save();renderList();focusInput(nc.id);
+    }else if(k==='u'){
+      var nu=U('',true,[]);m.arr.splice(idx+1,0,nu);
+      touch();save();renderList();focusInput(nu.id);
+    }
+  }else if(e.key==='Backspace'&&!el.value&&m&&m.arr.length>1){
+    e.preventDefault();
+    var pos=m.arr.indexOf(m.o);
+    var prev=m.arr[pos-1]||m.arr[pos+1];
+    m.arr.splice(pos,1);
+    touch();save();renderList();
+    if(prev)focusInput(prev.id);
+  }
+});
+
+document.addEventListener('input',function(e){
+  var el=e.target;
+  if(el.id==='q-input'){query=el.value.trim().toLowerCase();renderList();return}
+  var k=el.dataset&&el.dataset.k;if(!k)return;
+  if(k==='title'){S.title=el.value;$('#title').textContent=(S.title||'my syllabus').toLowerCase()}
+  else if(map[el.dataset.id])map[el.dataset.id].o.name=el.value;
+  touch();save();
+});
+
+/* ---------- Paste & Text Parser ---------- */
+function parse(text){
+  var rows=[];
+  text.split(/\r?\n/).forEach(function(raw){
+    if(!raw.trim())return;
+    var ws=raw.match(/^[ \t]*/)[0],ind=0;
+    for(var i=0;i<ws.length;i++)ind+=ws[i]==='\t'?4:1;
+    var t=raw.trim(),done=false,m=t.match(/^[-*+]?\s*\[([ xX]?)\]\s*/);
+    if(m){done=/x/i.test(m[1]);t=t.slice(m[0].length)}
+    t=t.replace(/^#{1,6}\s*/,'');
+    t=t.replace(/\*\*|__|==|~~|`/g,'');
+    t=t.replace(/^(?:[-•–]+\s*|[*+]\s+)+/,'');
+    t=t.replace(/^\(?(?:[a-zA-Z]|[ivxIVX]{2,4}|\d{1,2})\)\s+/,'').replace(/^\d+\.\s+/,'');
+    t=t.replace(/[\s:;,\-–]+$/,'').trim();
+    var lab=null,lm=t.match(/^(unit|module|part|section|chapter|lesson)\s*:\s*(\S.*)$/i);
+    if(lm){lab=/^(chapter|lesson)/i.test(lm[1])?1:0;t=lm[2].trim()}
+    if(t)rows.push({ind:ind,t:t,done:done,lab:lab});
+  });
+  var unitRe=/^(unit|module|part|section)\s+(\d+|[ivxlc]+|[a-z])\b/i,chRe=/^(chapter|lesson)\s+(\d+|[ivxlc]+|[a-z])\b|^ch\.?\s*\d+/i;
+  rows.forEach(function(r){r.lv=r.lab!==null?r.lab:unitRe.test(r.t)?0:chRe.test(r.t)?1:-1});
+  var anyExplicit=rows.some(function(r){return r.lv>=0});
+  if(!anyExplicit){
+    var inds=[];rows.forEach(function(r){if(inds.indexOf(r.ind)<0)inds.push(r.ind)});
+    inds.sort(function(a,b){return a-b});
+    var shift=3-Math.min(inds.length,3);
+    rows.forEach(function(r){r.lv=Math.min(inds.indexOf(r.ind)+shift,2)});
+  }else{
+    var start=0;
+    for(var i=0;i<=rows.length;i++){
+      if(i===rows.length||(i>start&&rows[i].lv===0)){
+        var blk=rows.slice(start,i),hasChap=blk.some(function(r){return r.lv===1});
+        var pl=[];blk.forEach(function(r){if(r.lv<0&&pl.indexOf(r.ind)<0)pl.push(r.ind)});
+        pl.sort(function(a,b){return a-b});
+        blk.forEach(function(r){if(r.lv<0)r.lv=(!hasChap&&pl.length>1&&r.ind===pl[0])?1:2});
+        start=i;
+      }
+    }
+  }
+
+  /* Preserve open state when re-saving existing units/chapters */
+  var oldU={},oldC={};
+  S.units.forEach(function(x){
+    oldU[x.name.toLowerCase()]=x.open;
+    x.chapters.forEach(function(y){oldC[(x.name+'|'+y.name).toLowerCase()]=y.open});
+  });
+
+  var units=[],u=null,c=null;
+  rows.forEach(function(r){
+    if(r.lv===0){
+      var uOpen=oldU.hasOwnProperty(r.t.toLowerCase())?oldU[r.t.toLowerCase()]:units.length===0;
+      u=U(r.t,uOpen,[]);units.push(u);c=null;
+    }
+    else if(r.lv===1){
+      if(!u){u=U('Syllabus',true,[]);units.push(u)}
+      var cKey=(u.name+'|'+r.t).toLowerCase();
+      var cOpen=oldC.hasOwnProperty(cKey)?oldC[cKey]:true;
+      c=C(r.t,[],r.done,cOpen);u.chapters.push(c);
+    }
+    else{
+      if(!u){u=U('Syllabus',true,[]);units.push(u)}
+      if(!c){c=C('Topics',[]);u.chapters.push(c)}
+      c.topics.push(T(r.t,r.done));
+    }
+  });
+  var cc=0,tc=0;units.forEach(function(x){cc+=x.chapters.length;x.chapters.forEach(function(y){tc+=y.topics.length})});
+  return {units:units,uc:units.length,cc:cc,tc:tc};
+}
+
+function toText(){
+  var o=[];
+  S.units.forEach(function(u){
+    o.push('Unit: '+u.name);
+    u.chapters.forEach(function(c){
+      o.push('  '+(!c.topics.length&&c.done?'[x] ':'')+'Chapter: '+c.name);
+      c.topics.forEach(function(t){o.push('    '+(t.done?'[x] ':'')+t.name)});
+    });
+  });
+  return o.join('\n');
+}
+
+function toMarkdown(){
+  var o=['# '+S.title,''];
+  S.units.forEach(function(u){
+    o.push('## '+u.name);
+    u.chapters.forEach(function(c){
+      if(!c.topics.length){
+        o.push('* ['+(c.done?'x':' ')+'] **'+c.name+'**');
+      }else{
+        o.push('### '+c.name);
+        c.topics.forEach(function(t){o.push('* ['+(t.done?'x':' ')+'] '+t.name)});
+      }
+    });
+    o.push('');
+  });
+  return o.join('\n');
+}
+
+function preview(){
+  var p=parse($('#pasteText').value);
+  $('#preview').textContent=p.tc||p.cc?'detected '+p.uc+' units, '+p.cc+' chapters, '+p.tc+' topics.':'nothing to save yet.';
+  return p;
+}
+function fillPaste(){
+  $('#pasteText').value=S.example?'':toText();
+  $('#pasteName').value=S.example?'':S.title;
+  pasteDirty=false;preview();
+}
+function openPaste(){
+  if(editing)setEditing(false);
+  if(!pasteDirty)fillPaste();
+  $('#paste').hidden=false;$('#btn-paste').setAttribute('aria-expanded','true');
+  try{$('#paste').scrollIntoView({block:'start',behavior:reduced?'auto':'smooth'})}catch(e){}
+}
+function closePaste(){$('#paste').hidden=true;$('#btn-paste').setAttribute('aria-expanded','false')}
+
+$('#btn-paste').addEventListener('click',function(){if($('#paste').hidden)openPaste();else closePaste()});
+$('#btn-close').addEventListener('click',closePaste);
+$('#btn-edit').addEventListener('click',function(){setEditing(!editing)});
+$('#pasteText').addEventListener('input',function(){pasteDirty=true;preview()});
+$('#pasteText').addEventListener('keydown',function(e){
+  if(e.key==='Tab'){e.preventDefault();shiftLine(e.shiftKey?-1:1)}
+});
+$('#pasteName').addEventListener('input',function(){pasteDirty=true});
+$('#btn-reload').addEventListener('click',function(){fillPaste();toast('box reset to your saved syllabus.')});
+$('#pasteTools').addEventListener('pointerdown',function(e){e.preventDefault()});
+
+function shiftLine(dir){
+  var ta=$('#pasteText'),v=ta.value,s=ta.selectionStart,ls=v.lastIndexOf('\n',s-1)+1;
+  if(dir>0){ta.value=v.slice(0,ls)+'  '+v.slice(ls);ta.setSelectionRange(s+2,s+2)}
+  else{
+    var m=v.slice(ls).match(/^ {1,2}|^\t/);
+    if(m){ta.value=v.slice(0,ls)+v.slice(ls+m[0].length);var ns=Math.max(ls,s-m[0].length);ta.setSelectionRange(ns,ns)}
+  }
+  pasteDirty=true;ta.focus();preview();
+}
+
+$('#btn-replace').addEventListener('click',function(){
+  var p=parse($('#pasteText').value);
+  if(!p.tc&&!p.cc){toast('the box is empty. use start over to clear everything.');return}
+  snapshot();
+  S.units=p.units;S.example=false;
+  var nm=$('#pasteName').value.trim();
+  if(nm)S.title=nm;else if(!S.title||S.title==='Physics, Class 12')S.title='My syllabus';
+  save();pasteDirty=false;closePaste();renderAll();
+  toast('saved: '+p.tc+' topics, '+p.cc+' chapters.',true);
+  window.scrollTo({top:0,behavior:reduced?'auto':'smooth'});
+});
+
+/* ---------- Footer Tools ---------- */
+$('#btn-md').addEventListener('click',function(){
+  var md=toMarkdown();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(md).then(function(){toast('markdown checklist copied to clipboard.')});
+  }else{
+    openPaste();$('#pasteText').value=md;toast('markdown placed in text box.');
+  }
+});
+
+$('#btn-json').addEventListener('click',function(){
+  var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(S.title||'syllabus').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('exported syllabus JSON.');
+});
+
+var fArm='',fTimer=0;
+function footerArm(which,btn,label,orig,fn){
+  if(fArm===which){clearTimeout(fTimer);fArm='';btn.textContent=orig;fn();return}
+  fArm=which;btn.textContent=label;clearTimeout(fTimer);
+  fTimer=setTimeout(function(){fArm='';btn.textContent=orig},4000);
+}
+$('#btn-reset').addEventListener('click',function(){
+  footerArm('reset',this,'tap again to reset','reset progress',function(){
+    snapshot();
+    S.units.forEach(function(u){u.chapters.forEach(function(c){c.done=false;c.topics.forEach(function(t){t.done=false})})});
+    pasteDirty=false;save();renderAll();toast('everything unticked.',true);
+  });
+});
+$('#btn-clear').addEventListener('click',function(){
+  footerArm('clear',this,'tap again to delete all','start over',function(){
+    snapshot();
+    S.units=[];S.example=false;S.title='My syllabus';if(editing)setEditing(false);pasteDirty=false;save();renderAll();openPaste();
+    toast('syllabus cleared.',true);
+  });
+});
+
+/* ---------- Init ---------- */
+reindex();renderAll();preview();setStatus();
+
+(async function(){
+  try{
+    if(!window.claude||!window.claude.use)return;
+    var db=await window.claude.use('db'),user=await window.claude.use('user');
+    if(!db||!user)return;
+    var id=await user.id();if(!id)return;
+    dbDoc=db.collection('data/users/'+id).doc('tracker');
+    var snap=await dbDoc.get(),remote=snap.exists?normalize((snap.data()||{}).state):null;
+    if(remote&&!touched&&remote.savedAt>=S.savedAt&&!(S.savedAt===0&&remote.example)){
+      S=remote;reindex();renderAll();
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+      mode='cloud';setStatus();
+    }else if(S.savedAt>0||touched){
+      pushDb();
+    }else{
+      mode='cloud';setStatus();
+    }
+  }catch(e){mode='local';setStatus()}
+})();
+})();
+</script>
+</body>
+</html>
